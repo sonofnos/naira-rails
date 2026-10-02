@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    # No `services:` block on purpose: the e2e suite starts its own Postgres 16
+    # and Redis 7 via Testcontainers, using the runner's Docker daemon.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Unit tests
+        run: npm test -- --ci
+      - name: Integration tests (Testcontainers)
+        run: npm run test:e2e -- --ci
